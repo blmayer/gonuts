@@ -1,23 +1,28 @@
 package main
 
 import (
+	"io/ioutil"
+	"log"
 	"os"
+	"time"
 
-	"github.com/blmayer/template/internal/database/mongodb"
+	nats "github.com/nats-io/nats.go"
 )
 
-const help = `template is a go program template
+const help = `gonuts makes a request to your nats server
 Usage:
-  template [options]
+  gonuts [options]
 Available options:
   -h
   --help	show this help
 Examples:
-  template --help`
+  gonuts --help`
 
-var nosql mongodb.Database
 
 func main() {
+	addr := os.Args[1]
+	subj := os.Args[2]
+	
 	// Command line arguments parsing
 	for i := 1; i < len(os.Args); i++ {
 		switch os.Args[i] {
@@ -26,19 +31,29 @@ func main() {
 		case "--help":
 			println(help)
 			os.Exit(0)
-		default:
-			os.Stderr.WriteString("error: wrong argument\n")
-			println(help)
-			os.Exit(-1)
+	}
+	
+	// Connect to nats
+	conn, err := nats.Connect(addr)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	timeout := time.Duration(60 * time.Second)
+	data := []byte(os.Args[3])
+	if os.Args[3] == "-f" {
+		file, err := os.Open(os.Args[4])
+		data, err = ioutil.ReadAll(file)
+		if err != nil {
+			log.Fatalln("file read error:", err)
 		}
 	}
 
-	// Connect to mongodb
-	var err error
-	nosql, err = mongodb.Connect("connString", "myDB")
+	res, err := conn.Request(subj, data, timeout)
 	if err != nil {
-		panic("mongodb connection: " + err.Error())
+		log.Fatalln("request error:", err)
 	}
 
-	println("template finished")
+	println(string(res.Data))
+	conn.Close()
 }
