@@ -1,5 +1,5 @@
-module github.com/blmayer/template
+module github.com/blmayer/gonuts
 
 go 1.16
 
-require go.mongodb.org/mongo-driver v1.5.0
+require github.com/nats-io/nats.go v1.11.0
