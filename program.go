@@ -31,6 +31,7 @@ func main() {
 		case "--help":
 			println(help)
 			os.Exit(0)
+		}
 	}
 	
 	// Connect to nats
